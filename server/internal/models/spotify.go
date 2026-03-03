@@ -1,5 +1,7 @@
 package models
 
+
+
 type SpotifyClient struct {
 	Id        string     `json:"id"`
 	SpotifyId string     `json:"spotifyid"`

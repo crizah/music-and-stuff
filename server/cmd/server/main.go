@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"server/internal/auth"
+	"server/internal/middleware"
 	"server/internal/server"
 
 	"github.com/gin-gonic/gin"
@@ -19,9 +20,9 @@ func main() {
 
 	auth := auth.NewAuthServer(base)
 	r := gin.Default()
-	// r.Use(CORSMiddleware())
+	r.Use(middleware.CORSMiddleware())
 
 	v1 := r.Group("/v1")
-	v1.POST("/auth/register", auth.SignUp) // works
+	v1.POST("/auth/signup", auth.SignUp)
 
 }
