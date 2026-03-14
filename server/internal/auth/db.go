@@ -5,15 +5,17 @@ import (
 	"errors"
 	"time"
 
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"server/internal/models"
+
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 func (s *Server) addToUsers(username string, user_id string) error {
-	user := bson.M{
-		"_id":       username,
-		"username":  username,
-		"createdAt": time.Now().UTC(),
+	now := time.Now()
+	user := models.Users{
+		Id:        user_id,
+		Username:  username,
+		CreatedAt: now.GoString(),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -31,16 +33,16 @@ func (s *Server) addToUsers(username string, user_id string) error {
 
 }
 func (s *Server) addToPasswords(user_id string, salt string, hash string) error {
-	user := bson.M{
-		"_id":    user_id, // PK
-		"salt":   salt,
-		"hashed": hash,
+	pass := models.Passwords{
+		Id:     user_id,
+		Hashed: hash,
+		Salt:   salt,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := s.CollPasswords.InsertOne(ctx, user)
+	_, err := s.CollPasswords.InsertOne(ctx, pass)
 	if err != nil {
 		// Duplicate key error
 		if mongo.IsDuplicateKeyError(err) {
@@ -53,16 +55,17 @@ func (s *Server) addToPasswords(user_id string, salt string, hash string) error 
 
 }
 
-func (s *Server) addToSpotify(user_id string, id string) error {
-	user := bson.M{
-		"_id":       user_id, // PK
-		"spotifyid": id,
+func (s *Server) addToSpotify(user_id string, id string, playlists []models.Playlist) error {
+	spotUser := models.SpotifyClient{
+		Id:        user_id,
+		SpotifyId: id,
+		Playlists: playlists,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := s.CollSpotify.InsertOne(ctx, user)
+	_, err := s.CollSpotify.InsertOne(ctx, spotUser)
 	if err != nil {
 		// Duplicate key error
 		if mongo.IsDuplicateKeyError(err) {

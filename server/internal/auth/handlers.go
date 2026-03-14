@@ -5,23 +5,14 @@ import (
 	"strings"
 	"sync"
 
+	"server/internal/schemas"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type SignUpReq struct {
-	Username  string `json:"username" binding:"required,min=1,max=10"`
-	Password  string `json:"password" binding:"required,min=1,max=20"`
-	SpotifyId string `json:"spotifyid"`
-}
-
-type SignUpRes struct {
-	Username     string `json:"username"`
-	SessionToken string `json:"sessionToken"`
-}
-
 func (s *Server) SignUp(c *gin.Context) {
-	var req SignUpReq
+	var req schemas.SignUpReq
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "username bw 1-10 chars"})
@@ -41,8 +32,32 @@ func (s *Server) SignUp(c *gin.Context) {
 	// create user id
 	user_id := uuid.New().String()
 
-	// get spotify info to add to potify table
-	// verify spotify user accoiunt and add to users table
+	// verify spotify user account
+	verified, err := s.VerifySpotifyUser(req.SpotifyId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error" + err.Error()})
+
+	}
+	if !verified {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid spotify account"})
+		return
+	}
+
+	// get users playlists
+
+	playlistsRes, err := s.GetUserPlaylists(req.SpotifyId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to fetch playlists" + err.Error()})
+		return
+	}
+
+	// extract relevent info from response
+	playlists, err := s.ExtractInfoFromPlaylists(playlistsRes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "coudlnt extract playlist" + err.Error()})
+	}
+
+	// add to playlist
 
 	// put username and id in users
 	// put salt and hash in passwords
@@ -81,7 +96,7 @@ func (s *Server) SignUp(c *gin.Context) {
 
 	go func() {
 		defer wg.Done()
-		err := s.addToSpotify(user_id, req.SpotifyId)
+		err := s.addToSpotify(user_id, req.SpotifyId, *playlists)
 		mux.Lock()
 		defer mux.Unlock()
 
@@ -99,7 +114,7 @@ func (s *Server) SignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, SignUpRes{
+	c.JSON(http.StatusCreated, schemas.SignUpRes{
 		Username:     req.Username,
 		SessionToken: token,
 	})

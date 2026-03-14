@@ -21,6 +21,7 @@ type Server struct {
 	CollUsers     *mongo.Collection
 	CollPasswords *mongo.Collection
 	CollSpotify   *mongo.Collection
+	AccessToken   string
 	// CollAnswerLog *mongo.Collection
 	StateCache *cache.Cache
 }
@@ -28,6 +29,7 @@ type Server struct {
 func InitialiseServer() (*Server, error) {
 
 	uri := os.Getenv("MONGO_DB_URI")
+	access_token := os.Getenv("SPOTIFY_ACCESS_TOKEN")
 	token := []byte(os.Getenv("JWT_SECRET"))
 
 	clientOptions := options.Client().ApplyURI(uri)
@@ -73,7 +75,8 @@ func InitialiseServer() (*Server, error) {
 	})
 
 	return &Server{MongoClient: client, CollUsers: u, CollPasswords: p,
-		StateCache: mycache, JwtSecret: token, CollSpotify: s}, nil
+		StateCache: mycache, JwtSecret: token, CollSpotify: s,
+		AccessToken: access_token}, nil
 
 }
 
