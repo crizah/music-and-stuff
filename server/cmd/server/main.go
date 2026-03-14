@@ -22,7 +22,8 @@ func main() {
 	r := gin.Default()
 	r.Use(middleware.CORSMiddleware())
 
-	v1 := r.Group("/v1")
-	v1.POST("/auth/signup", auth.SignUp)
+	v1 := r.Group("api/v1")
+	v1.POST("/auth/signup", auth.SignUpHandler)
+	v1.POST("/auth/login", auth.LoginHandler)
 
 }

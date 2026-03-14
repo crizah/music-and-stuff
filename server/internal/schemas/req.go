@@ -5,3 +5,8 @@ type SignUpReq struct {
 	Password  string `json:"password" binding:"required,min=1,max=20"`
 	SpotifyId string `json:"spotifyid"`
 }
+
+type LoginReq struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
